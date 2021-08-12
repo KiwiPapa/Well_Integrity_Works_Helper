@@ -1,10 +1,11 @@
 # -*- mode: python ; coding: utf-8 -*-
 
+
 block_cipher = None
 
 
 a = Analysis(['工程测井助手.py'],
-             pathex=['E:\\python-source-codes\\EngineerLoggingAssistant'],
+             pathex=['D:\\Desktop\\EngineerLoggingAssistant(Windows full version)'],
              binaries=[],
              datas=[],
              hiddenimports=[],

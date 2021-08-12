@@ -1,4 +1,4 @@
-# coding=utf-8
+﻿# coding=utf-8
 import os
 import random
 import shutil
@@ -11,18 +11,21 @@ from datetime import datetime, timedelta
 import numpy as np
 import openpyxl
 import pandas as pd
+import pyautogui
+import pyperclip
 import xlrd
 import xlwings as xw
 import xlwt
 from xlutils.copy import copy
-from changeOffice import Change
 from docx import Document
 from docx.enum.table import WD_CELL_VERTICAL_ALIGNMENT
 from docx.enum.text import WD_PARAGRAPH_ALIGNMENT
+from docx.enum.text import WD_LINE_SPACING
 from docx.oxml.ns import qn
 from docx.shared import Cm, Inches, Pt, RGBColor
 from openpyxl import load_workbook
 from PIL import Image
+from PyQt5.Qt import QPoint, QPropertyAnimation, QEasingCurve, QAbstractAnimation
 from PyQt5 import QtCore, QtGui, QtWidgets, QtNetwork
 from PyQt5.QtCore import QDate, QTime, QBasicTimer, QDateTime, Qt, QTimer
 from PyQt5.QtPrintSupport import QPageSetupDialog, QPrintDialog, QPrinter
@@ -41,15 +44,6 @@ from CLASSES.EMITTINGSTR_CLASS import EmittingStr
 from CLASSES.SUPERVISOR_BY_EMAIL_CLASS import Supervisor
 
 
-def Main_window_show():
-    main.show()
-
-class Chain_Pane(QWidget, Ui_Form):
-    def __init__(self):
-        super(Chain_Pane, self).__init__()
-        self.setupUi(self)
-        self.pushButton.clicked.connect(Main_window_show)
-
 class Main_window(QMainWindow, Ui_MainWindow):
     def __init__(self):
         super(Main_window, self).__init__()
@@ -60,22 +54,18 @@ class Main_window(QMainWindow, Ui_MainWindow):
         # qss = "QMainWindow#mainWindow{background-color:black;}"
 
         randon_num = random.randint(1, 100)
-        if 1 <= randon_num < 10:
-            qss = "QMainWindow#mainWindow{border-image:url(./resources/image/mountain.jpg);}"
+        if 1 <= randon_num < 2:
+            qss = "QMainWindow#mainWindow{border-image:url(./resources/image/Great_Field_Dunes.jpg);}"
             self.setStyleSheet(qss)
-        elif 10 <= randon_num < 20:
+        elif 2 <= randon_num < 3:
             qss = "QMainWindow#mainWindow{border-image:url(./resources/image/rainbow.jpg);}"
             self.setStyleSheet(qss)
-        elif 20 <= randon_num < 30:
-            qss = "QMainWindow#mainWindow{border-image:url(./resources/image/sea.jpg);}"
+        elif 3 <= randon_num < 5:
+            qss = "QMainWindow#mainWindow{border-image:url(./resources/image/MacWallpaper_WWDC2020_FlareZephyr.png);}"
             self.setStyleSheet(qss)
         else:
             pass
         self.lock = threading.Lock()  # 数据锁
-        try: # 将工区备份至FTP
-            self.auto_upload_to_FTP()
-        except:
-            print('Faild to connect to oracle_data')
 
         # Release OR Debug 版本切换控制
         # TODO
@@ -166,6 +156,7 @@ class Main_window(QMainWindow, Ui_MainWindow):
         self.pushButton_53.setToolTip('成果表放置后该按钮才有用噢')
         self.pushButton_3.clicked.connect(self.generate_txt_file)
         self.pushButton_3.setToolTip('生成可导入LEAD4.0的TXT井信息文件')
+        self.pushButton_67.clicked.connect(self.result_table_process_in_report_module) # 成果表规范化
         self.pushButton_4.clicked.connect(self.generate_report_thread)
         self.pushButton_4.clicked.connect(self.progressbar_action_thread)
         self.pushButton_5.clicked.connect(self.clean_report_workspace)  # 清理报告生成工区目录（除了result，因为整理后的会输出到这个目录）
@@ -194,7 +185,7 @@ class Main_window(QMainWindow, Ui_MainWindow):
         self.comboBox_12.addItems(['合格', '无连续25m', '不确定', '/'])
         self.comboBox_12.setCurrentText('/')
 
-        choices_list1 = ["李海军", "陈海祥", "杨艺", "朱莉", "何强", "罗文", "王昌德", "周政英", "孙路路", '?']
+        choices_list1 = ["李海军", "陈海祥", "杨艺", "朱莉", "何强", "罗文", "王昌德", "周政英", "闫跃星", "辛冬梅", "王遂华", "刘静", "?"]
         self.comboBox_2.addItems(choices_list1)
         self.comboBox_3.addItems(choices_list1)
         self.comboBox_2.setCurrentText('?')
@@ -202,11 +193,11 @@ class Main_window(QMainWindow, Ui_MainWindow):
         self.comboBox_2.currentIndexChanged[str].connect(self.connection_to_comboBox_3)
         self.comboBox_3.currentIndexChanged[str].connect(self.connection_to_comboBox_2)
 
-        choices_list2 = ["李海军", "陈海祥", "杨艺", "朱莉", "何强", "罗文", "王昌德", "周政英", "孙路路", '?']
+        choices_list2 = ["李海军", "陈海祥", "杨艺", "朱莉", "何强", "罗文", "王昌德", "周政英", "闫跃星", "辛冬梅", "王遂华", "刘静", "?"]
         self.comboBox.addItems(choices_list2)
         self.comboBox.setCurrentText('?')
 
-        choices_list3 = ["刘恒", "王参文", "刘静", "朱莉", '?']
+        choices_list3 = ["刘恒", "王参文", "刘静", "朱莉", "李海军", "?"]
         self.comboBox_4.addItems(choices_list3)
         self.comboBox_4.setCurrentText('?')
 
@@ -330,13 +321,15 @@ class Main_window(QMainWindow, Ui_MainWindow):
         self.pushButton_52.clicked.connect(self.open_table_process_directory)  # 打开合并统计工区文件夹
         self.pushButton_56.clicked.connect(self.open_table_fusion_directory)  # 打开综合评价工区文件夹
 
-        # 规范化2
-        self.pushButton_57.clicked.connect(self.table_process3)
+        # 生成综合评价表
+        self.pushButton_57.clicked.connect(self.table_process3) # 规范化
         self.pushButton_58.clicked.connect(self.table_fusion_reaction)
 
         self.action.triggered.connect(self.menubar_simple_instruction)
         self.action_2.triggered.connect(self.menubar_author_info)
 
+        # 查询好中差比例小工具
+        self.pushButton_66.clicked.connect(self.table_process4)
         self.pushButton_61.clicked.connect(self.search_for_statistic_result)
         ###################################################
 
@@ -349,8 +342,6 @@ class Main_window(QMainWindow, Ui_MainWindow):
 
         # 分层表和储层表整理模块初始化
         ###################################################
-        self.pushButton_15.clicked.connect(self.select_format_dir)
-        self.pushButton_16.clicked.connect(self.start_to_convert)
         self.pushButton_7.clicked.connect(self.select_layer_table)
         self.pushButton_2.clicked.connect(self.layer_table_process)
         self.pushButton_6.clicked.connect(self.select_formation_table)
@@ -396,26 +387,8 @@ class Main_window(QMainWindow, Ui_MainWindow):
         cursor = self.textBrowser.textCursor()
         cursor.movePosition(QtGui.QTextCursor.End)
         cursor.insertText(text)
-        self.textBrowser.setTextCursor(cursor)
-        self.textBrowser.ensureCursorVisible()
-
-    def auto_upload_to_FTP(self):
-        ftp = MyFTP('10.132.203.206')
-        ftp.Login('zonghs', 'zonghs123')
-        local_path = './WorkSpace'
-        # local_path = r'C:\Users\YANGYI\source\repos\GC_Logging_Helper_Release'
-        remote_path = '/oracle_data9/arc_data/SGI1/2016年油套管检测归档/工区备份'
-
-        # 备份文件夹改名
-        myname = socket.getfqdn(socket.gethostname())  # 获取本机电脑名
-        myaddr = socket.gethostbyname(myname)  # 获取本机ip
-        myaddr = myaddr.replace('.', '-')
-        timeStr = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
-        timeStr = timeStr.replace(':', '-').replace(' ', '-')
-        # print(remote_path + '/' + timeStr + '_' + myaddr + '_' + myname)
-        ftp.Mkd(remote_path + '/' + timeStr + '_' + myaddr + '_' + myname)
-
-        ftp.UpLoadFileTree(local_path, remote_path + '/' + timeStr + '_' + myaddr + '_' + myname)
+        # self.textBrowser.setTextCursor(cursor)
+        # self.textBrowser.ensureCursorVisible()
 
     def mail_Addresses_Update(self):
         # 初始化
@@ -583,7 +556,7 @@ class Main_window(QMainWindow, Ui_MainWindow):
 
     def progressbar_action(self):
         if self.timer.isActive():
-            self.pushButton_4.setText('请等待...')
+            self.pushButton_4.setText('请等待……')
             self.pushButton_4.setEnabled(False)
         else:
             pass
@@ -787,16 +760,6 @@ class Main_window(QMainWindow, Ui_MainWindow):
         # self.lineEdit_107.setText(start_Evaluation_1_digits)
         self.lineEdit_103.setText(start_Evaluation_2_digits)
         self.lineEdit_105.setText(end_Evaluation_2_digits)
-
-    def select_format_dir(self):
-        fdir = QFileDialog.getExistingDirectory(self, '打开文件夹', './')
-        self.lineEdit_41.setText(fdir)
-
-    def start_to_convert(self):
-        fdir_to_change = Change(self.lineEdit_41.text())
-        fdir_to_change.doc2docx()
-        fdir_to_change.xls2xlsx()
-        QMessageBox.information(self, "提示", "格式转换成功，请到目录中查看")
 
     def select_layer_table(self):
         fnames = QFileDialog.getOpenFileNames(self, '打开分层表', './')  # 注意这里返回值是元组
@@ -1087,14 +1050,14 @@ class Main_window(QMainWindow, Ui_MainWindow):
         except:
             print('Error1')
         else:
-            print('disconnected1')
+            print('Disconnected1')
 
         try:
             self.radioButton_6.toggled.disconnect(lambda: self.btnstate(self.radioButton_6))
         except:
             print('Error2')
         else:
-            print('disconnected2')
+            print('Disconnected2')
 
         try:
             self.pushButton_26.clicked.disconnect(self.add_signature_on_pic_100)
@@ -1102,7 +1065,7 @@ class Main_window(QMainWindow, Ui_MainWindow):
         except:
             print('Error3')
         else:
-            print('disconnected3')
+            print('Disconnected3')
         self.radioButton_5.toggled.connect(lambda: self.btnstate(self.radioButton_5))
         self.radioButton_6.toggled.connect(lambda: self.btnstate(self.radioButton_6))
 
@@ -1277,7 +1240,7 @@ class Main_window(QMainWindow, Ui_MainWindow):
         self.lineEdit_14.setText(magnetic_Declination)
         ######################################################################## 推测油田
         oil_Field = document.tables[0].cell(14, 2).text.replace(' ', '')
-        if '西南' in oil_Field or '四川' in oil_Field or '勘探' in oil_Field or '蜀南' in oil_Field or '重庆' in oil_Field:
+        if '西南' in oil_Field or '四川' in oil_Field or '勘探' in oil_Field or '蜀南' in oil_Field or '重庆' in oil_Field or '开发' in oil_Field:
             oil_Field = '西南油气田'
         self.lineEdit_17.setText(oil_Field)
         ######################################################################## 钻井单位
@@ -1799,10 +1762,14 @@ class Main_window(QMainWindow, Ui_MainWindow):
 
             # 密度大于1.75产生警告
             try:
-                if slow_Cement_Density != '':
+                try:
                     slow_Density = float(slow_Cement_Density)
-                if fast_Cement_Density != '':
+                except:
+                    pass
+                try:
                     fast_Density = float(fast_Cement_Density)
+                except:
+                    pass
                 if slow_Density >= 1.75 or fast_Density >= 1.75:
                     self.label_134.setText('注意要按照15/30标准处理')
                     self.label_134.setStyleSheet("font: 12pt")
@@ -2303,10 +2270,16 @@ class Main_window(QMainWindow, Ui_MainWindow):
 
             # 密度大于1.75产生警告
             try:
-                slow_Density = float(slow_Cement_Density)
-                fast_Density = float(fast_Cement_Density)
+                try:
+                    slow_Density = float(slow_Cement_Density)
+                except:
+                    pass
+                try:
+                    fast_Density = float(fast_Cement_Density)
+                except:
+                    pass
                 if slow_Density >= 1.75 or fast_Density >= 1.75:
-                    self.label_134.setText('注意要按照15/30标准处理')
+                    self.label_134.setText('请注意要按照15|30的标准处理')
                     self.label_134.setStyleSheet("font: 12pt")
                     self.label_134.setStyleSheet("color: rgb(255, 0, 0)")
                 else:
@@ -2808,6 +2781,7 @@ class Main_window(QMainWindow, Ui_MainWindow):
     def automate_table_helper(self):
         # 读取单层统计表
         PATH = ".\\WorkSpace\\报告生成工区\\成果表"
+        fileName = ''
         for fileName in os.listdir(PATH):
             if '1单' in fileName and '.xls' in fileName and '$' not in fileName:
                 fileDir = PATH + "\\" + fileName
@@ -2837,227 +2811,235 @@ class Main_window(QMainWindow, Ui_MainWindow):
 
             # 自动补充井次名
             self.set_well_detail_name()
+        elif fileName == '':
+            QMessageBox.information(self, "提示", "成果表放置后该按钮才有用噢")
+        else:
+            QMessageBox.information(self, "提示", "遇到了一点问题，请联系开发者")
 
     def generate_txt_file(self):
-        if self.run_on_net == True:
-            Supervisor.lead_txt_usage_supervisor()
+        if self.lineEdit_5.text() == '' or '路径' in self.lineEdit_5.text():
+            self.error_animation()
+            self.lineEdit_5.setText('您还没有选中登记表路径！')
         else:
-            pass
+            if self.run_on_net == True:
+                Supervisor.lead_txt_usage_supervisor()
+            else:
+                pass
 
-        well_Name = self.lineEdit.text()
-        well_Category = self.comboBox_7.currentText()
-        well_Type = self.comboBox_6.currentText()
-        well_Depth = self.lineEdit_4.text()
-        x_Coordinate = self.lineEdit_9.text()
-        y_Coordinate = self.lineEdit_10.text()
-        magnetic_Declination = self.lineEdit_14.text()
-        ground_Elevation = self.lineEdit_12.text()
-        bushing_Height = self.lineEdit_13.text()
-        kelly_Bushing = self.lineEdit_11.text()
-        oil_Field = self.lineEdit_17.text()
-        client_Name = self.lineEdit_50.text()
-        geo_Position = self.lineEdit_16.text()
-        stru_Position = self.lineEdit_18.text()
-        completion_Date = self.lineEdit_39.text()
-        spud_Date = self.lineEdit_20.text()
-        end_Drilling_Date = self.lineEdit_21.text()
-        deepest_bit = self.lineEdit_102.text()
-        drilling_Unit = self.lineEdit_74.text()
-        max_Well_Deviation_Depth = self.lineEdit_28.text()
-        max_Well_Deviation = self.lineEdit_24.text()
-        bit1_Diameter = self.tableWidget_6.item(0, 0).text()
-        bit1_Depth = self.tableWidget_6.item(0, 1).text()
-        bit2_Diameter = self.tableWidget_6.item(1, 0).text()
-        bit2_Depth = self.tableWidget_6.item(1, 1).text()
-        bit3_Diameter = self.tableWidget_6.item(2, 0).text()
-        bit3_Depth = self.tableWidget_6.item(2, 1).text()
-        bit4_Diameter = self.tableWidget_6.item(3, 0).text()
-        bit4_Depth = self.tableWidget_6.item(3, 1).text()
-        bit5_Diameter = self.tableWidget_6.item(4, 0).text()
-        bit5_Depth = self.tableWidget_6.item(4, 1).text()
-        well_Times_Name = self.lineEdit_3.text()
-        well_Times_Type = self.lineEdit_49.text()
-        logging_Date = self.lineEdit_40.text()
-        measure_Interval_Start_Depth = self.lineEdit_110.text()
-        measure_Interval_End_Depth = self.lineEdit_111.text()
-        logging_Equipment = self.comboBox_5.currentText()
-        arti_Bottom = self.lineEdit_65.text()
-        interpretation_Complete_Date = self.lineEdit_55.text()
-        evaluation_start_depth = self.lineEdit_103.text()
-        evaluation_end_depth = self.lineEdit_105.text()
-        task_Number = self.lineEdit_19.text()
-        logging_Group = self.lineEdit_43.text()
-        logging_Leader = self.lineEdit_54.text()
-        logging_Operator = self.lineEdit_44.text()
-        report_Writer = self.comboBox_2.currentText()
-        report_Checker = self.comboBox.currentText()
-        report_Supervisor = self.comboBox_4.currentText()
-        flu_Property = self.lineEdit_60.text()
-        flu_Density = self.lineEdit_61.text()
-        flu_Viscosity = self.lineEdit_62.text()
-        design_Depth = self.lineEdit_69.text()
-        actual_Depth = self.lineEdit_70.text()
-        cement_Quantity = self.lineEdit_71.text()
-        cement_Density = self.lineEdit_72.text()
-        cement_End_Date = self.lineEdit_22.text()
-        cement_Unit = self.lineEdit_25.text()
+            well_Name = self.lineEdit.text()
+            well_Category = self.comboBox_7.currentText()
+            well_Type = self.comboBox_6.currentText()
+            well_Depth = self.lineEdit_4.text()
+            x_Coordinate = self.lineEdit_9.text()
+            y_Coordinate = self.lineEdit_10.text()
+            magnetic_Declination = self.lineEdit_14.text()
+            ground_Elevation = self.lineEdit_12.text()
+            bushing_Height = self.lineEdit_13.text()
+            kelly_Bushing = self.lineEdit_11.text()
+            oil_Field = self.lineEdit_17.text()
+            client_Name = self.lineEdit_50.text()
+            geo_Position = self.lineEdit_16.text()
+            stru_Position = self.lineEdit_18.text()
+            completion_Date = self.lineEdit_39.text()
+            spud_Date = self.lineEdit_20.text()
+            end_Drilling_Date = self.lineEdit_21.text()
+            deepest_bit = self.lineEdit_102.text()
+            drilling_Unit = self.lineEdit_74.text()
+            max_Well_Deviation_Depth = self.lineEdit_28.text()
+            max_Well_Deviation = self.lineEdit_24.text()
+            bit1_Diameter = self.tableWidget_6.item(0, 0).text()
+            bit1_Depth = self.tableWidget_6.item(0, 1).text()
+            bit2_Diameter = self.tableWidget_6.item(1, 0).text()
+            bit2_Depth = self.tableWidget_6.item(1, 1).text()
+            bit3_Diameter = self.tableWidget_6.item(2, 0).text()
+            bit3_Depth = self.tableWidget_6.item(2, 1).text()
+            bit4_Diameter = self.tableWidget_6.item(3, 0).text()
+            bit4_Depth = self.tableWidget_6.item(3, 1).text()
+            bit5_Diameter = self.tableWidget_6.item(4, 0).text()
+            bit5_Depth = self.tableWidget_6.item(4, 1).text()
+            well_Times_Name = self.lineEdit_3.text()
+            well_Times_Type = self.lineEdit_49.text()
+            logging_Date = self.lineEdit_40.text()
+            measure_Interval_Start_Depth = self.lineEdit_110.text()
+            measure_Interval_End_Depth = self.lineEdit_111.text()
+            logging_Equipment = self.comboBox_5.currentText()
+            arti_Bottom = self.lineEdit_65.text()
+            interpretation_Complete_Date = self.lineEdit_55.text()
+            evaluation_start_depth = self.lineEdit_103.text()
+            evaluation_end_depth = self.lineEdit_105.text()
+            task_Number = self.lineEdit_19.text()
+            logging_Group = self.lineEdit_43.text()
+            logging_Leader = self.lineEdit_54.text()
+            logging_Operator = self.lineEdit_44.text()
+            report_Writer = self.comboBox_2.currentText()
+            report_Checker = self.comboBox.currentText()
+            report_Supervisor = self.comboBox_4.currentText()
+            flu_Property = self.lineEdit_60.text()
+            flu_Density = self.lineEdit_61.text()
+            flu_Viscosity = self.lineEdit_62.text()
+            design_Depth = self.lineEdit_69.text()
+            actual_Depth = self.lineEdit_70.text()
+            cement_Quantity = self.lineEdit_71.text()
+            cement_Density = self.lineEdit_72.text()
+            cement_End_Date = self.lineEdit_22.text()
+            cement_Unit = self.lineEdit_25.text()
 
-        casing1_Inner_Dia = self.tableWidget_7.item(0, 0).text()
-        casing1_Dia = self.tableWidget_7.item(0, 1).text()
-        casing1_Thickness = self.tableWidget_7.item(0, 2).text()
-        casing1_bottom = self.tableWidget_7.item(0, 3).text()
+            casing1_Inner_Dia = self.tableWidget_7.item(0, 0).text()
+            casing1_Dia = self.tableWidget_7.item(0, 1).text()
+            casing1_Thickness = self.tableWidget_7.item(0, 2).text()
+            casing1_bottom = self.tableWidget_7.item(0, 3).text()
 
-        casing2_Inner_Dia = self.tableWidget_7.item(1, 0).text()
-        casing2_Dia = self.tableWidget_7.item(1, 1).text()
-        casing2_Thickness = self.tableWidget_7.item(1, 2).text()
-        casing2_bottom = self.tableWidget_7.item(1, 3).text()
+            casing2_Inner_Dia = self.tableWidget_7.item(1, 0).text()
+            casing2_Dia = self.tableWidget_7.item(1, 1).text()
+            casing2_Thickness = self.tableWidget_7.item(1, 2).text()
+            casing2_bottom = self.tableWidget_7.item(1, 3).text()
 
-        casing3_Inner_Dia = self.tableWidget_7.item(2, 0).text()
-        casing3_Dia = self.tableWidget_7.item(2, 1).text()
-        casing3_Thickness = self.tableWidget_7.item(2, 2).text()
-        casing3_bottom = self.tableWidget_7.item(2, 3).text()
+            casing3_Inner_Dia = self.tableWidget_7.item(2, 0).text()
+            casing3_Dia = self.tableWidget_7.item(2, 1).text()
+            casing3_Thickness = self.tableWidget_7.item(2, 2).text()
+            casing3_bottom = self.tableWidget_7.item(2, 3).text()
 
-        casing4_Inner_Dia = self.tableWidget_7.item(3, 0).text()
-        casing4_Dia = self.tableWidget_7.item(3, 1).text()
-        casing4_Thickness = self.tableWidget_7.item(3, 2).text()
-        casing4_bottom = self.tableWidget_7.item(3, 3).text()
+            casing4_Inner_Dia = self.tableWidget_7.item(3, 0).text()
+            casing4_Dia = self.tableWidget_7.item(3, 1).text()
+            casing4_Thickness = self.tableWidget_7.item(3, 2).text()
+            casing4_bottom = self.tableWidget_7.item(3, 3).text()
 
-        casing5_Inner_Dia = self.tableWidget_7.item(4, 0).text()
-        casing5_Dia = self.tableWidget_7.item(4, 1).text()
-        casing5_Thickness = self.tableWidget_7.item(4, 2).text()
-        casing5_bottom = self.tableWidget_7.item(4, 3).text()
+            casing5_Inner_Dia = self.tableWidget_7.item(4, 0).text()
+            casing5_Dia = self.tableWidget_7.item(4, 1).text()
+            casing5_Thickness = self.tableWidget_7.item(4, 2).text()
+            casing5_bottom = self.tableWidget_7.item(4, 3).text()
 
-        cement_End_Time = self.lineEdit_101.text()
-        logging_Start_Time = self.lineEdit_104.text()
-        logging_Method = self.lineEdit_100.text()
+            cement_End_Time = self.lineEdit_101.text()
+            logging_Start_Time = self.lineEdit_104.text()
+            logging_Method = self.lineEdit_100.text()
 
-        logging_Company = self.lineEdit_15.text()
+            logging_Company = self.lineEdit_15.text()
 
-        # 避免报告中出现'-99999'
-        if cement_Quantity == '-99999':
-            cement_Quantity = '/'
-        else:
-            pass
+            # 避免报告中出现'-99999'
+            if cement_Quantity == '-99999':
+                cement_Quantity = '/'
+            else:
+                pass
 
-        if arti_Bottom == '-99999':
-            arti_Bottom = '/'
-        else:
-            pass
+            if arti_Bottom == '-99999':
+                arti_Bottom = '/'
+            else:
+                pass
 
-        # 新规定，起始评价深度从0米开始
-        # if float(evaluation_start_depth) < 200:
-        #     evaluation_start_depth = '0'
+            # 新规定，起始评价深度从0米开始
+            # if float(evaluation_start_depth) < 200:
+            #     evaluation_start_depth = '0'
 
-        DICT_TXT = {
-            "井名": well_Name,
-            "井别": well_Category,
-            "井型": well_Type,
-            "井深": well_Depth,
-            "X坐标": x_Coordinate,
-            "Y坐标": y_Coordinate,
-            "经度": '-99999',
-            "纬度": '-99999',
-            "磁偏角": magnetic_Declination,
-            "地面海拔": ground_Elevation,
-            "补心高度": bushing_Height,
-            "补心海拔": kelly_Bushing,
-            "油田": oil_Field,
-            "甲方单位": client_Name,
-            "地区": geo_Position,
-            "构造位置": stru_Position,
-            "完井日期": completion_Date,
-            "开钻日期": spud_Date,
-            "完钻日期": end_Drilling_Date,
-            "设计井深": '-99999',
-            "完钻井深": deepest_bit,
-            "钻井单位": drilling_Unit,
-            "最大井斜深度": max_Well_Deviation_Depth,
-            "最大井斜斜度": max_Well_Deviation,
-            "钻头1直径": bit1_Diameter,
-            "钻头1深度": bit1_Depth,
-            "钻头2直径": bit2_Diameter,
-            "钻头2深度": bit2_Depth,
-            "钻头3直径": bit3_Diameter,
-            "钻头3深度": bit3_Depth,
-            "钻头4直径": bit4_Diameter,
-            "钻头4深度": bit4_Depth,
-            "钻头5直径": bit5_Diameter,
-            "钻头5深度": bit5_Depth,
-            "井次名称": well_Times_Name,
-            "井次类别": well_Times_Type,
-            "测井日期": logging_Date,
-            "测井顶部深度": measure_Interval_Start_Depth,
-            "测井底部深度": measure_Interval_End_Depth,
-            "标准段顶部深度": measure_Interval_Start_Depth,
-            "标准段底部深度": measure_Interval_End_Depth,
-            "测井公司": logging_Company,
-            "测井项目": '固井质量检测',
-            "测井装备": logging_Equipment,
-            "测井仪器": '三组合变密度',
-            "测时井深": arti_Bottom,
-            "解释完成日期": interpretation_Complete_Date,
-            "解释段顶部深度": evaluation_start_depth,
-            "解释段底部深度": evaluation_end_depth,
-            "任务单号": task_Number,
-            "测井小队": logging_Group,
-            "小队长": logging_Leader,
-            "操作员": logging_Operator,
-            "监督员": report_Writer,
-            "处理员": report_Writer,
-            "校对员": report_Checker,
-            "审核员": report_Supervisor,
-            "泥浆类型": flu_Property,
-            "泥浆密度": flu_Density,
-            "泥浆粘度": flu_Viscosity,
-            "泥浆电阻率": -99999,
-            "泥浆温度": -99999,
-            "泥浆滤液电阻率": -99999,
-            "泥浆滤液温度": -99999,
-            "泥浆PH值": -99999,
-            "泥浆失水": -99999,
-            "井内液体": flu_Property,
-            "人工井底": arti_Bottom,
-            "预计水泥返高": design_Depth,
-            "实际水泥返高": actual_Depth,
-            "注水泥量": cement_Quantity,
-            "水泥密度": cement_Density,
-            "固井日期": cement_End_Date,
-            "固井单位": cement_Unit,
-            "套管1内径": casing1_Inner_Dia,
-            "套管1外径": casing1_Dia,
-            "套管1壁厚": casing1_Thickness,
-            "套管1终深": casing1_bottom,
-            "套管2内径": casing2_Inner_Dia,
-            "套管2外径": casing2_Dia,
-            "套管2壁厚": casing2_Thickness,
-            "套管2终深": casing2_bottom,
-            "套管3内径": casing3_Inner_Dia,
-            "套管3外径": casing3_Dia,
-            "套管3壁厚": casing3_Thickness,
-            "套管3终深": casing3_bottom,
-            "套管4内径": casing4_Inner_Dia,
-            "套管4外径": casing4_Dia,
-            "套管4壁厚": casing4_Thickness,
-            "套管4终深": casing4_bottom,
-            "套管5内径": casing5_Inner_Dia,
-            "套管5外径": casing5_Dia,
-            "套管5壁厚": casing5_Thickness,
-            "套管5终深": casing5_bottom,
-            "MINTHICK": 1,
-            "钻井深度": deepest_bit,
-            "固井结束时间": cement_End_Time,
-            "测井开始时间": logging_Start_Time,
-            "测井工艺": logging_Method
+            DICT_TXT = {
+                "井名": well_Name,
+                "井别": well_Category,
+                "井型": well_Type,
+                "井深": well_Depth,
+                "X坐标": x_Coordinate,
+                "Y坐标": y_Coordinate,
+                "经度": '-99999',
+                "纬度": '-99999',
+                "磁偏角": magnetic_Declination,
+                "地面海拔": ground_Elevation,
+                "补心高度": bushing_Height,
+                "补心海拔": kelly_Bushing,
+                "油田": oil_Field,
+                "甲方单位": client_Name,
+                "地区": geo_Position,
+                "构造位置": stru_Position,
+                "完井日期": completion_Date,
+                "开钻日期": spud_Date,
+                "完钻日期": end_Drilling_Date,
+                "设计井深": '-99999',
+                "完钻井深": deepest_bit,
+                "钻井单位": drilling_Unit,
+                "最大井斜深度": max_Well_Deviation_Depth,
+                "最大井斜斜度": max_Well_Deviation,
+                "钻头1直径": bit1_Diameter,
+                "钻头1深度": bit1_Depth,
+                "钻头2直径": bit2_Diameter,
+                "钻头2深度": bit2_Depth,
+                "钻头3直径": bit3_Diameter,
+                "钻头3深度": bit3_Depth,
+                "钻头4直径": bit4_Diameter,
+                "钻头4深度": bit4_Depth,
+                "钻头5直径": bit5_Diameter,
+                "钻头5深度": bit5_Depth,
+                "井次名称": well_Times_Name,
+                "井次类别": well_Times_Type,
+                "测井日期": logging_Date,
+                "测井顶部深度": measure_Interval_Start_Depth,
+                "测井底部深度": measure_Interval_End_Depth,
+                "标准段顶部深度": measure_Interval_Start_Depth,
+                "标准段底部深度": measure_Interval_End_Depth,
+                "测井公司": logging_Company,
+                "测井项目": '固井质量检测',
+                "测井装备": logging_Equipment,
+                "测井仪器": '三组合变密度',
+                "测时井深": arti_Bottom,
+                "解释完成日期": interpretation_Complete_Date,
+                "解释段顶部深度": evaluation_start_depth,
+                "解释段底部深度": evaluation_end_depth,
+                "任务单号": task_Number,
+                "测井小队": logging_Group,
+                "小队长": logging_Leader,
+                "操作员": logging_Operator,
+                "监督员": report_Writer,
+                "处理员": report_Writer,
+                "校对员": report_Checker,
+                "审核员": report_Supervisor,
+                "泥浆类型": flu_Property,
+                "泥浆密度": flu_Density,
+                "泥浆粘度": flu_Viscosity,
+                "泥浆电阻率": -99999,
+                "泥浆温度": -99999,
+                "泥浆滤液电阻率": -99999,
+                "泥浆滤液温度": -99999,
+                "泥浆PH值": -99999,
+                "泥浆失水": -99999,
+                "井内液体": flu_Property,
+                "人工井底": arti_Bottom,
+                "预计水泥返高": design_Depth,
+                "实际水泥返高": actual_Depth,
+                "注水泥量": cement_Quantity,
+                "水泥密度": cement_Density,
+                "固井日期": cement_End_Date,
+                "固井单位": cement_Unit,
+                "套管1内径": casing1_Inner_Dia,
+                "套管1外径": casing1_Dia,
+                "套管1壁厚": casing1_Thickness,
+                "套管1终深": casing1_bottom,
+                "套管2内径": casing2_Inner_Dia,
+                "套管2外径": casing2_Dia,
+                "套管2壁厚": casing2_Thickness,
+                "套管2终深": casing2_bottom,
+                "套管3内径": casing3_Inner_Dia,
+                "套管3外径": casing3_Dia,
+                "套管3壁厚": casing3_Thickness,
+                "套管3终深": casing3_bottom,
+                "套管4内径": casing4_Inner_Dia,
+                "套管4外径": casing4_Dia,
+                "套管4壁厚": casing4_Thickness,
+                "套管4终深": casing4_bottom,
+                "套管5内径": casing5_Inner_Dia,
+                "套管5外径": casing5_Dia,
+                "套管5壁厚": casing5_Thickness,
+                "套管5终深": casing5_bottom,
+                "MINTHICK": 1,
+                "钻井深度": deepest_bit,
+                "固井结束时间": cement_End_Time,
+                "测井开始时间": logging_Start_Time,
+                "测井工艺": logging_Method
 
-        }
-        temp = self.lineEdit_5.text().split('/')[-1]
-        temp2 = self.lineEdit_5.text().replace(temp, '')
+            }
+            temp = self.lineEdit_5.text().split('/')[-1]
+            temp2 = self.lineEdit_5.text().replace(temp, '')
 
-        f = open(temp2 + well_Name + '-井信息(LEAD4.0).txt', 'w', encoding='UTF-8')
-        for key, value in DICT_TXT.items():
-            f.write(key + '=' + str(value) + '\n')
-        f.close()
-        QMessageBox.information(self, "提示", "井信息文件已生成，和原始资料登记表在同一目录")
+            f = open(temp2 + well_Name + '-井信息(LEAD4.0).txt', 'w', encoding='UTF-8')
+            for key, value in DICT_TXT.items():
+                f.write(key + '=' + str(value) + '\n')
+            f.close()
+            QMessageBox.information(self, "提示", "井信息文件已生成，和原始资料登记表在同一目录")
 
     def bit_info_table(self):
         self.tableWidget_6.setColumnCount(2)
@@ -3079,16 +3061,16 @@ class Main_window(QMainWindow, Ui_MainWindow):
         self.tableWidget_6.setRowHeight(4, 20)
 
         # 值初始化，否则会出现AttributeError: 'NoneType' object has no attribute 'text'
-        self.tableWidget_6.setItem(0, 0, QTableWidgetItem(str('')))
-        self.tableWidget_6.setItem(0, 1, QTableWidgetItem(str('')))
-        self.tableWidget_6.setItem(1, 1, QTableWidgetItem(str('')))
-        self.tableWidget_6.setItem(1, 1, QTableWidgetItem(str('')))
-        self.tableWidget_6.setItem(2, 0, QTableWidgetItem(str('')))
-        self.tableWidget_6.setItem(2, 1, QTableWidgetItem(str('')))
-        self.tableWidget_6.setItem(3, 0, QTableWidgetItem(str('')))
-        self.tableWidget_6.setItem(3, 1, QTableWidgetItem(str('')))
-        self.tableWidget_6.setItem(4, 0, QTableWidgetItem(str('')))
-        self.tableWidget_6.setItem(4, 1, QTableWidgetItem(str('')))
+        self.tableWidget_6.setItem(0, 0, QTableWidgetItem(str(' ')))
+        self.tableWidget_6.setItem(0, 1, QTableWidgetItem(str(' ')))
+        self.tableWidget_6.setItem(1, 0, QTableWidgetItem(str(' ')))
+        self.tableWidget_6.setItem(1, 1, QTableWidgetItem(str(' ')))
+        self.tableWidget_6.setItem(2, 0, QTableWidgetItem(str(' ')))
+        self.tableWidget_6.setItem(2, 1, QTableWidgetItem(str(' ')))
+        self.tableWidget_6.setItem(3, 0, QTableWidgetItem(str(' ')))
+        self.tableWidget_6.setItem(3, 1, QTableWidgetItem(str(' ')))
+        self.tableWidget_6.setItem(4, 0, QTableWidgetItem(str(' ')))
+        self.tableWidget_6.setItem(4, 1, QTableWidgetItem(str(' ')))
 
         # self.tableWidget_6.setRowHeight(0, 50)
         # self.tableWidget_6.verticalHeader().setVisible(False)  # 隐藏垂直表头
@@ -3117,31 +3099,31 @@ class Main_window(QMainWindow, Ui_MainWindow):
         self.tableWidget_7.setRowHeight(4, 20)
 
         # 值初始化
-        self.tableWidget_7.setItem(0, 0, QTableWidgetItem(str('')))
-        self.tableWidget_7.setItem(0, 1, QTableWidgetItem(str('')))
-        self.tableWidget_7.setItem(0, 2, QTableWidgetItem(str('')))
-        self.tableWidget_7.setItem(0, 3, QTableWidgetItem(str('')))
-        self.tableWidget_7.setItem(0, 4, QTableWidgetItem(str('')))
-        self.tableWidget_7.setItem(1, 0, QTableWidgetItem(str('')))
-        self.tableWidget_7.setItem(1, 1, QTableWidgetItem(str('')))
-        self.tableWidget_7.setItem(1, 2, QTableWidgetItem(str('')))
-        self.tableWidget_7.setItem(1, 3, QTableWidgetItem(str('')))
-        self.tableWidget_7.setItem(1, 4, QTableWidgetItem(str('')))
-        self.tableWidget_7.setItem(2, 0, QTableWidgetItem(str('')))
-        self.tableWidget_7.setItem(2, 1, QTableWidgetItem(str('')))
-        self.tableWidget_7.setItem(2, 2, QTableWidgetItem(str('')))
-        self.tableWidget_7.setItem(2, 3, QTableWidgetItem(str('')))
-        self.tableWidget_7.setItem(2, 4, QTableWidgetItem(str('')))
-        self.tableWidget_7.setItem(3, 0, QTableWidgetItem(str('')))
-        self.tableWidget_7.setItem(3, 1, QTableWidgetItem(str('')))
-        self.tableWidget_7.setItem(3, 2, QTableWidgetItem(str('')))
-        self.tableWidget_7.setItem(3, 3, QTableWidgetItem(str('')))
-        self.tableWidget_7.setItem(3, 4, QTableWidgetItem(str('')))
-        self.tableWidget_7.setItem(4, 0, QTableWidgetItem(str('')))
-        self.tableWidget_7.setItem(4, 1, QTableWidgetItem(str('')))
-        self.tableWidget_7.setItem(4, 2, QTableWidgetItem(str('')))
-        self.tableWidget_7.setItem(4, 3, QTableWidgetItem(str('')))
-        self.tableWidget_7.setItem(4, 4, QTableWidgetItem(str('')))
+        self.tableWidget_7.setItem(0, 0, QTableWidgetItem(str(' ')))
+        self.tableWidget_7.setItem(0, 1, QTableWidgetItem(str(' ')))
+        self.tableWidget_7.setItem(0, 2, QTableWidgetItem(str(' ')))
+        self.tableWidget_7.setItem(0, 3, QTableWidgetItem(str(' ')))
+        self.tableWidget_7.setItem(0, 4, QTableWidgetItem(str(' ')))
+        self.tableWidget_7.setItem(1, 0, QTableWidgetItem(str(' ')))
+        self.tableWidget_7.setItem(1, 1, QTableWidgetItem(str(' ')))
+        self.tableWidget_7.setItem(1, 2, QTableWidgetItem(str(' ')))
+        self.tableWidget_7.setItem(1, 3, QTableWidgetItem(str(' ')))
+        self.tableWidget_7.setItem(1, 4, QTableWidgetItem(str(' ')))
+        self.tableWidget_7.setItem(2, 0, QTableWidgetItem(str(' ')))
+        self.tableWidget_7.setItem(2, 1, QTableWidgetItem(str(' ')))
+        self.tableWidget_7.setItem(2, 2, QTableWidgetItem(str(' ')))
+        self.tableWidget_7.setItem(2, 3, QTableWidgetItem(str(' ')))
+        self.tableWidget_7.setItem(2, 4, QTableWidgetItem(str(' ')))
+        self.tableWidget_7.setItem(3, 0, QTableWidgetItem(str(' ')))
+        self.tableWidget_7.setItem(3, 1, QTableWidgetItem(str(' ')))
+        self.tableWidget_7.setItem(3, 2, QTableWidgetItem(str(' ')))
+        self.tableWidget_7.setItem(3, 3, QTableWidgetItem(str(' ')))
+        self.tableWidget_7.setItem(3, 4, QTableWidgetItem(str(' ')))
+        self.tableWidget_7.setItem(4, 0, QTableWidgetItem(str(' ')))
+        self.tableWidget_7.setItem(4, 1, QTableWidgetItem(str(' ')))
+        self.tableWidget_7.setItem(4, 2, QTableWidgetItem(str(' ')))
+        self.tableWidget_7.setItem(4, 3, QTableWidgetItem(str(' ')))
+        self.tableWidget_7.setItem(4, 4, QTableWidgetItem(str(' ')))
 
 
         # self.tableWidget_7.setRowHeight(0, 50)
@@ -3217,7 +3199,6 @@ class Main_window(QMainWindow, Ui_MainWindow):
         else:
             pass
         # 全文档表格内容居中
-        '''
         for table in document.tables:
             for row in range(len(table.rows)):
                 for col in range(len(table.columns)):
@@ -3225,7 +3206,6 @@ class Main_window(QMainWindow, Ui_MainWindow):
             # 整体设置，未起作用
             # table.style.font.color.rgb = RGBColor(255, 0, 0)
             # table.style.paragraph_format.alignment = WD_PARAGRAPH_ALIGNMENT.CENTER
-        '''
         document.save(newFile)
 
     def check(self, document):
@@ -3669,6 +3649,28 @@ class Main_window(QMainWindow, Ui_MainWindow):
             text = text + item + '\n'
         self.textEdit_8.setText(text)
 
+    def result_table_process_in_report_module(self):
+        # 读取单层统计表
+        PATH = ".\\WorkSpace\\报告生成工区\\成果表"
+        for fileName in os.listdir(PATH):
+            if '1单' in fileName and '.xls' in fileName and '$' not in fileName:
+                fileDir = PATH + "\\" + fileName
+                try:
+                    # 表格表头字段规范
+                    self.xls_formatting_first_layer(fileDir)
+                finally:
+                    pass
+                QMessageBox.information(self, "提示", "一界面表格数据规范化完毕")
+        for fileName in os.listdir(PATH):
+            if '2单' in fileName and '.xls' in fileName and '$' not in fileName:
+                fileDir = PATH + "\\" + fileName
+                try:
+                    # 表格表头字段规范
+                    self.xls_formatting_second_layer(fileDir)
+                finally:
+                    pass
+                QMessageBox.information(self, "提示", "二界面表格数据规范化完毕")
+
     def generate_report_thread(self):
         generate_report = threading.Thread(target=self.generate_report)
         generate_report.start()
@@ -3770,12 +3772,6 @@ class Main_window(QMainWindow, Ui_MainWindow):
         for fileName in os.listdir(PATH):
             if '1单' in fileName and '.xls' in fileName and '$' not in fileName:
                 fileDir = PATH + "\\" + fileName
-                try:
-                    # 表格表头字段规范
-                    self.xls_formatting_first_layer(fileDir)
-                finally:
-                    pass
-                # fileDir = ''.join([fileDir.replace('.' + fileDir.split('.')[-1], ''), '(已规范化).xls'])
                 workbook = xlrd.open_workbook(fileDir)
 
         sheet = workbook.sheets()[0]
@@ -3802,11 +3798,6 @@ class Main_window(QMainWindow, Ui_MainWindow):
         for fileName in os.listdir(PATH):
             if '2单' in fileName and '.xls' in fileName and '$' not in fileName:
                 fileDir = PATH + "\\" + fileName
-                try:
-                    # 表格表头字段规范
-                    self.xls_formatting_second_layer(fileDir)
-                finally:
-                    pass
                 workbook = xlrd.open_workbook(fileDir)
 
         sheet = workbook.sheets()[0]
@@ -4136,12 +4127,12 @@ class Main_window(QMainWindow, Ui_MainWindow):
             "evaluation_Start": evaluation_Start
         }
 
-        print('模板替换开始，请等待...')
+        print('模板替换开始，请等待……')
 
         self.document_replace()  # 模板替换主程序
 
         print('\n模板替换完成')
-        print('储层表添加中，请等待...')
+        print('储层表添加中，请等待……')
 
         ################################################################################
         # 储层表的嵌入
@@ -4182,7 +4173,7 @@ class Main_window(QMainWindow, Ui_MainWindow):
             document.save(newFile)  # 保存下
 
         ################################################################################
-        print('单层统计表添加中...')
+        print('单层统计表添加中……')
         PATH = ".\\WorkSpace\\报告生成工区\\成果表"
         # 添加1单
         for fileName in os.listdir(PATH):
@@ -4240,7 +4231,7 @@ class Main_window(QMainWindow, Ui_MainWindow):
 
         # 合并单元格
         if self.checkBox_11.isChecked():
-            print('\n一界面单层统计表格式优化中...')
+            print('\n一界面单层统计表格式优化中……')
             for row in range(1, len(table.rows)):
                 self.view_bar(row, len(table.rows) - 1)
                 table.rows[row].height = Pt(20)
@@ -4304,7 +4295,7 @@ class Main_window(QMainWindow, Ui_MainWindow):
 
         # 合并单元格
         if self.checkBox_11.isChecked():
-            print('\n二界面单层统计表格式优化中...')
+            print('\n二界面单层统计表格式优化中……')
             for row in range(1, len(table.rows)):
                 self.view_bar(row, len(table.rows) - 1)
                 table.rows[row].height = Pt(20)
@@ -4322,17 +4313,20 @@ class Main_window(QMainWindow, Ui_MainWindow):
         document.save(newFile)
         print('\n二界面单层统计表添加完成')
 
-        print('正在添加储层段落，请等待...')
+        print('正在添加储层段落，请等待……')
         ################################################################################
         # 储层固井质量评价
-        p = document.add_paragraph()
-        p.paragraph_format.alignment = WD_PARAGRAPH_ALIGNMENT.LEFT
-        p.paragraph_format.line_spacing = Pt(24)
-        run = p.add_run(u"5．储层段固井质量分析")
+        # p = document.add_paragraph()
+        # p.paragraph_format.alignment = WD_PARAGRAPH_ALIGNMENT.LEFT
+        # p.paragraph_format.line_spacing = Pt(24)
+        # run = p.add_run(u"5．储层段固井质量分析")
+        run = document.add_heading('', level=2).add_run(u"5．储层段固井质量分析")
+        # run = document.add_paragraph().add_run(u"5．储层段固井质量分析")
+        run.line_spacing_rule = WD_LINE_SPACING.SINGLE
         run.font.name = 'Times New Roman'  # 英文字体
-        run.element.rPr.rFonts.set(qn('w:eastAsia'), u'宋体')  # 中文字体
+        run.element.rPr.rFonts.set(qn('w:eastAsia'), u'黑体')  # 中文字体
         run.font.size = Pt(14)
-        run.bold = True
+        # run.bold = True
         run.font.color.rgb = RGBColor(0, 0, 0)
 
         evaluation_of_formation_upper1 = []
@@ -4728,7 +4722,7 @@ class Main_window(QMainWindow, Ui_MainWindow):
                     if all_evaluation_of_formation2[formation_Number_Temp - 1] == '[储层范围超出测量边界，待确定]':
                         formation_Wave_Energy = '[储层范围超出测量边界，待确定]'
                     ###
-                    r = p.add_run(str(formation_Number_Temp) + '#储层声幅')
+                    r = p.add_run(str(formation_Number_Temp) + '#储层声幅值')
                     # r.bold = True
                     r.font.name = 'Times New Roman'
                     r.element.rPr.rFonts.set(qn('w:eastAsia'), '宋体')
@@ -4887,13 +4881,21 @@ class Main_window(QMainWindow, Ui_MainWindow):
                 bad_Start_Ends.append(bad_Start_End + 'm、')
             bad_Start_Ends = ''.join(bad_Start_Ends).rstrip('、')
 
-            p = document.add_paragraph()
-            p.paragraph_format.alignment = WD_PARAGRAPH_ALIGNMENT.LEFT
-            p.paragraph_format.line_spacing = Pt(24)
-            run = p.add_run(u"三 建议及其它")
-            run.font.name = '黑体'  # 英文字体
-            run.element.rPr.rFonts.set(qn('w:eastAsia'), u'黑体')  # 中文字体
+            # p = document.add_paragraph()
+            # p.paragraph_format.alignment = WD_PARAGRAPH_ALIGNMENT.LEFT
+            # p.paragraph_format.line_spacing = Pt(24)
+            # run = p.add_run(u"三 建议及其它")
+            # run.font.name = '黑体'  # 英文字体
+            # run.element.rPr.rFonts.set(qn('w:eastAsia'), u'黑体')  # 中文字体
+            # run.font.size = Pt(16)
+            # run.bold = True
+            # run.font.color.rgb = RGBColor(0, 0, 0)
+
+            run = document.add_heading('', level=1).add_run(u"三 建议及其它")
+            run.line_spacing_rule = WD_LINE_SPACING.SINGLE
+            run.font.name = '黑体'
             run.font.size = Pt(16)
+            run._element.rPr.rFonts.set(qn('w:eastAsia'), '黑体')
             run.bold = True
             run.font.color.rgb = RGBColor(0, 0, 0)
 
@@ -4905,17 +4907,16 @@ class Main_window(QMainWindow, Ui_MainWindow):
             p.paragraph_format.first_line_indent = Cm(0.74)  # 首行缩进0.74厘米，即2个字符
             if bad_number != 0:
                 r = p.add_run(
-                    bad_Start_Ends + '井段声幅值较高，套管接箍信号明显，固井质量较差（见图' + str(pic_number + 2) + '-' + str(
-                        pic_number + bad_number + 2) + '）。')
+                    bad_Start_Ends + '井段声幅值较高，套管接箍信号明显，一界面固井质量较差（见附图' + str(1) + '-' + str(bad_number + 1) + '）。')
             elif bad_number == 0:
                 r = p.add_run(
-                    bad_Start_Ends + '井段声幅值较高，套管接箍信号明显，固井质量较差（见图' + str(pic_number + 2) + '）。')
+                    bad_Start_Ends + '井段声幅值较高，套管接箍信号明显，一界面固井质量较差（见附图1）。')
             # r.bold = True
             r.font.name = 'Times New Roman'
             r.element.rPr.rFonts.set(qn('w:eastAsia'), '宋体')
             r.font.size = Pt(12)
 
-            print('正在添加胶结为差段落，请等待...')
+            print('正在添加胶结为差段落，请等待……')
             # 添加固井质量差图片
             for bad_number in range(len(bad_Interval_Names)):
                 bad_Name_Split = bad_Interval_Names[bad_number].split('-')
@@ -4945,7 +4946,7 @@ class Main_window(QMainWindow, Ui_MainWindow):
                 p.paragraph_format.alignment = WD_PARAGRAPH_ALIGNMENT.CENTER
                 p.paragraph_format.line_spacing = Pt(24)
                 r = p.add_run(
-                    '图' + str(pic_number + bad_number + 2) + ' ' + well_Name + '井（' + bad_Start_End + 'm）固井处理成果图')
+                    '附图' + str(bad_number + 1) + ' ' + well_Name + '井（' + bad_Start_End + 'm）固井处理成果图')
                 # r.bold = True
                 r.font.name = 'Times New Roman'
                 r.element.rPr.rFonts.set(qn('w:eastAsia'), '宋体')
@@ -4971,6 +4972,28 @@ class Main_window(QMainWindow, Ui_MainWindow):
             r.font.name = 'Times New Roman'
             r.element.rPr.rFonts.set(qn('w:eastAsia'), '宋体')
             r.font.size = Pt(12)
+
+        p = document.add_paragraph()
+        p.paragraph_format.alignment = WD_PARAGRAPH_ALIGNMENT.LEFT
+        p.paragraph_format.line_spacing = Pt(24)
+        p.paragraph_format.first_line_indent = Cm(0.74)  # 首行缩进0.74厘米，即2个字符
+        r = p.add_run('附件：固井施工质量评价表（见附件1）')
+        # r.bold = True
+        r.font.name = 'Times New Roman'
+        r.element.rPr.rFonts.set(qn('w:eastAsia'), '宋体')
+        r.font.size = Pt(12)
+
+        p = document.add_paragraph()
+
+        p = document.add_paragraph()
+        p.paragraph_format.alignment = WD_PARAGRAPH_ALIGNMENT.LEFT
+        p.paragraph_format.line_spacing = Pt(24)
+        p.paragraph_format.first_line_indent = Cm(0.74)  # 首行缩进0.74厘米，即2个字符
+        r = p.add_run('附件1 ' + well_Name + '井固井施工质量评价表')
+        # r.bold = True
+        r.font.name = 'Times New Roman'
+        r.element.rPr.rFonts.set(qn('w:eastAsia'), '宋体')
+        r.font.size = Pt(12)
         ################################################################################
         # 签名
         PATH = '.\\resources\\签名\\'
@@ -4992,8 +5015,14 @@ class Main_window(QMainWindow, Ui_MainWindow):
             add1.add_run().add_picture(PATH + '签名-王昌德.jpg', width=Inches(1.0))
         elif report_Writer == '周政英':
             add1.add_run().add_picture(PATH + '签名-周政英.jpg', width=Inches(1.0))
-        elif report_Writer == '孙路路':
-            add1.add_run().add_picture(PATH + '签名-孙路路.jpg', width=Inches(1.0))
+        elif report_Writer == '闫跃星':
+            add1.add_run().add_picture(PATH + '签名-闫跃星.jpg', width=Inches(1.0))
+        elif report_Writer == '辛冬梅':
+            add1.add_run().add_picture(PATH + '签名-辛冬梅.jpg', width=Inches(1.0))
+        elif report_Writer == '王遂华':
+            add1.add_run().add_picture(PATH + '签名-王遂华.jpg', width=Inches(1.0))
+        elif report_Writer == '刘静':
+            add1.add_run().add_picture(PATH + '签名-刘静.jpg', width=Inches(1.0))
         else:
             pass
         report_Supervisor = self.comboBox_4.currentText()
@@ -5006,6 +5035,8 @@ class Main_window(QMainWindow, Ui_MainWindow):
             add2.add_run().add_picture(PATH + '签名-刘静.jpg', width=Inches(1.0))
         elif report_Supervisor == '朱莉':
             add2.add_run().add_picture(PATH + '签名-朱莉.jpg', width=Inches(1.0))
+        elif report_Supervisor == '李海军':
+            add2.add_run().add_picture(PATH + '签名-李海军.jpg', width=Inches(1.0))
         else:
             pass
         document.save(newFile)
@@ -6902,42 +6933,42 @@ class Main_window(QMainWindow, Ui_MainWindow):
         except:
             print('Error1')
         else:
-            print('disconnected1')
+            print('Disconnected1')
 
         try:
             self.radioButton_2.toggled.disconnect(lambda: self.btnstate_table(self.radioButton_2))
         except:
             print('Error2')
         else:
-            print('disconnected2')
+            print('Disconnected2')
 
         try:
             self.pushButton_14.clicked.disconnect(self.calculate_for_first_layer)
         except:
             print('Error3')
         else:
-            print('disconnected3')
+            print('Disconnected3')
 
         try:
             self.pushButton_27.clicked.disconnect(self.table_process1)
         except:
             print('Error4')
         else:
-            print('disconnected4')
+            print('Disconnected4')
 
         try:
             self.pushButton_14.clicked.disconnect(self.calculate_for_second_layer)
         except:
             print('Error5')
         else:
-            print('disconnected5')
+            print('Disconnected5')
 
         try:
             self.pushButton_27.clicked.disconnect(self.table_process2)
         except:
             print('Error6')
         else:
-            print('disconnected6')
+            print('Disconnected6')
         self.radioButton.toggled.connect(lambda: self.btnstate_table(self.radioButton))
         self.radioButton_2.toggled.connect(lambda: self.btnstate_table(self.radioButton_2))
 
@@ -7421,26 +7452,112 @@ class Main_window(QMainWindow, Ui_MainWindow):
             evaluation_of_formation2 = self.layer_evaluation2(df2, list1[i], list1[j])[1]  # 调取二界面评价函数
             if evaluation_of_formation1 == '好' and evaluation_of_formation2 in['好', '中', '不确定']:
                 evaluation_of_formation = '优'
+                evaluation_of_formation_normal = '好'
             elif evaluation_of_formation1 == '中' and evaluation_of_formation2 =='好':
                 evaluation_of_formation = '优'
+                evaluation_of_formation_normal = '好'
             elif evaluation_of_formation1 == '中' and evaluation_of_formation2 in ['中', '不确定']:
                 evaluation_of_formation = '中等'
+                evaluation_of_formation_normal = '中'
             elif evaluation_of_formation1 == '差' or evaluation_of_formation2 =='差':
                 evaluation_of_formation = '差'
+                evaluation_of_formation_normal = '差'
             thickness = round(list1[j] - list1[i], 2)
             interval = '-'.join([('%.2f' % list1[i]), ('%.2f' % list1[j])])
-            print(interval, thickness, evaluation_of_formation1, evaluation_of_formation2, evaluation_of_formation, '\n')
-            series = pd.Series({"井段(m)": interval, "厚度(m)": thickness, "一界面评价": evaluation_of_formation1, "二界面评价": evaluation_of_formation2, "综合评价": evaluation_of_formation}, name=i+1)
+            print(interval, thickness, evaluation_of_formation1, evaluation_of_formation2, evaluation_of_formation, evaluation_of_formation_normal, '\n')
+            series = pd.Series({"井段(m)": interval, "厚度(m)": thickness, "一界面评价": evaluation_of_formation1, \
+                                "二界面评价": evaluation_of_formation2, "综合评价": evaluation_of_formation, "综合评价(好中差)": evaluation_of_formation_normal}, name=i+1)
             data = data.append(series)
         # dataframe排序
-        data = data[['井段(m)', '厚度(m)', '一界面评价', '二界面评价', '综合评价']]
+        data = data[['井段(m)', '厚度(m)', '一界面评价', '二界面评价', '综合评价', '综合评价(好中差)']]
         print(data)
 
+        # 获取开始结束深度
+        workbook = xlrd.open_workbook(fileDir1)
+        sheet = workbook.sheets()[0]
+
+        # 获得表单的行数及列数
+        nrow = sheet.nrows
+        ncol = sheet.ncols
+        # 处理评价井段
+        calculation_Start = str(sheet.cell_value(3, 1)).strip()
+        calculation_Start = calculation_Start.split('-')[0]
+        calculation_End = str(sheet.cell_value(nrow - 1, 1)).strip('')
+        calculation_End = ''.join(calculation_End.split())  # 去除所有空格
+        calculation_End = calculation_End.split('-')[1]
+
         # 保存为excel
-        writer = pd.ExcelWriter('.\\WorkSpace\\综合评价工区\\综合评价表.xlsx')
+        writer = pd.ExcelWriter('.\\WorkSpace\\综合评价工区\\综合评价表(' + str(calculation_Start) + '-' + str(calculation_End) + 'm).xlsx')
         data.to_excel(writer, 'Sheet1')
         writer.save()
+
+        # 统计好中差比例
+        df = pd.read_excel('.\\WorkSpace\\综合评价工区\\综合评价表(' + str(calculation_Start) + '-' + str(calculation_End) + 'm).xlsx', header=0)
+        df = df.reset_index()
+        ratio_Series = df.groupby(by=['综合评价(好中差)'])['厚度(m)'].sum() / df['厚度(m)'].sum() * 100
+        if ratio_Series.__len__() == 2:
+            if '好' not in ratio_Series:
+                ratio_Series = ratio_Series.append(pd.Series({'好': 0}))
+            elif '中' not in ratio_Series:
+                ratio_Series = ratio_Series.append(pd.Series({'中': 0}))
+            elif '差' not in ratio_Series:
+                ratio_Series = ratio_Series.append(pd.Series({'差': 0}))
+        elif ratio_Series.__len__() == 1:
+            if ('好' not in ratio_Series) & ('中' not in ratio_Series):
+                ratio_Series = ratio_Series.append(pd.Series({'好': 0}))
+                ratio_Series = ratio_Series.append(pd.Series({'中': 0}))
+            elif ('好' not in ratio_Series) & ('差' not in ratio_Series):
+                ratio_Series = ratio_Series.append(pd.Series({'好': 0}))
+                ratio_Series = ratio_Series.append(pd.Series({'差': 0}))
+            elif ('中' not in ratio_Series) & ('差' not in ratio_Series):
+                ratio_Series = ratio_Series.append(pd.Series({'中': 0}))
+                ratio_Series = ratio_Series.append(pd.Series({'差': 0}))
+        # print(ratio_Series)
+
+        wb = openpyxl.load_workbook('.\\WorkSpace\\综合评价工区\\综合评价表(' + str(calculation_Start) + '-' + str(calculation_End) + 'm).xlsx')
+        sheet = wb[wb.sheetnames[0]]
+        max_row = sheet.max_row
+        calculation_End2 = float(sheet['B' + str(max_row)].value.split('-')[1])
+        calculation_Start2 = float(sheet['B2'].value.split('-')[0])
+        # 统计结论
+        actual_Hao = str(round((calculation_End2 - calculation_Start2) * (ratio_Series['好'] / 100), 2))
+        Hao_Ratio = str(round(ratio_Series['好'], 2))
+
+        actual_Zhong = str(round((calculation_End2 - calculation_Start2) * (ratio_Series['中'] / 100), 2))
+        Zhong_Ratio = str(round(ratio_Series['中'], 2))
+
+        actual_Cha = str(
+            round(calculation_End2 - calculation_Start2 - float(actual_Hao) - float(actual_Zhong), 2))
+        Cha_Ratio = str(round(100.00 - float(Hao_Ratio) - float(Zhong_Ratio), 2))
+
+        PATH = '.\\resources\\模板\\'
+        wb = openpyxl.load_workbook(PATH + '综合评价统计模板.xlsx')
+        sheet = wb[wb.sheetnames[0]]
+        sheet['A1'] = ''.join(['综合评价统计表（', str(calculation_Start2), '-', str(calculation_End2), 'm）'])
+        sheet['B4'] = actual_Hao
+        sheet['C4'] = Hao_Ratio
+        sheet['B5'] = actual_Zhong
+        sheet['C5'] = Zhong_Ratio
+        sheet['B6'] = actual_Cha
+        sheet['C6'] = Cha_Ratio
+
+        self.mkdir('.\\WorkSpace\\综合评价工区')
+        wb.save('.\\WorkSpace\\综合评价工区\\综合评价统计表(' + str(calculation_Start2) + '-' + str(calculation_End2) + 'm).xlsx')
         QMessageBox.information(self, "提示", "运行完毕，请查看工区")
+
+    def table_process4(self):
+        fileDir1 = self.lineEdit_77.text()
+        fileDir2 = self.lineEdit_76.text()
+        if fileDir1 != '':
+            self.xls_formatting_first_layer(fileDir1)
+            QMessageBox.information(self, "提示", "一界面表格数据规范化完毕")
+        else:
+            pass
+        if fileDir2 != '':
+            self.xls_formatting_second_layer(fileDir1)
+            QMessageBox.information(self, "提示", "二界面表格数据规范化完毕")
+        else:
+            pass
 
     def search_for_statistic_result(self):
         start_depth = float(self.lineEdit_78.text())
@@ -7492,33 +7609,30 @@ class Main_window(QMainWindow, Ui_MainWindow):
             not_sure = 100 - evaluation_of_formation2['好'] - evaluation_of_formation2['中'] - evaluation_of_formation2['差']
             self.lineEdit_82.setText(('%.2f' % not_sure))
 
-# 清理所有非空文件夹和文件
-def clean_dir_of_all(path):
-    list = os.listdir(path)
-    if len(list) != 0:
-        for i in range(0, len(list)):
-            path_to_clean = os.path.join(path, list[i])
-            if '工程测井助手' in list[i]: # 不删除主exe
-                pass
-            else:
-                if '.' not in list[i]:
-                    shutil.rmtree(path_to_clean)  # 清理文件夹，可非空
-                else:
-                    os.remove(path_to_clean)  # 清理文件
-    else:
-        pass
+    def error_animation(self): # 窗口错误摇摆提示
+        animation = QPropertyAnimation(self)
+        animation.setTargetObject(self.tabWidget_2)
+        animation.setPropertyName(b"pos")
+        animation.setKeyValueAt(0, self.tabWidget_2.pos())
+        animation.setKeyValueAt(0.3, self.tabWidget_2.pos() + QPoint(-10, 0))
+        animation.setKeyValueAt(0.5, self.tabWidget_2.pos())
+        animation.setKeyValueAt(0.7, self.tabWidget_2.pos() + QPoint(10, 0))
+        animation.setKeyValueAt(1, self.tabWidget_2.pos())
+        animation.setDuration(120)
+        animation.setLoopCount(3)
+        animation.start(QAbstractAnimation.DeleteWhenStopped)
 
-if __name__ == "__main__":
+class Chain_Pane(QWidget, Ui_Form):
+    def __init__(self):
+        super(Chain_Pane, self).__init__()
+        self.setupUi(self)
+        self.pushButton.clicked.connect(Main_window_show)
+        self.pushButton_3.clicked.connect(Check_updates)
 
-    # 运行主程序
-    app = QApplication(sys.argv)
-    QApplication.setStyle(QStyleFactory.create("Fusion"))
-    Chain = Chain_Pane()
-    # main.show()
-    Chain.show()
-    main = Main_window()
-    Chain.label.setText("检查软件更新中，请稍后...")
+def Main_window_show():
+    main.show()
 
+def Check_updates():
     try:
         # 先检查更新
         PATH = ".\\"
@@ -7563,7 +7677,46 @@ if __name__ == "__main__":
             Chain.label.setText("本地软件版本已经是最新。")
 
     except:
-        # Chain.label.setText("连接FTP服务器失败，继续运行？")
+        Chain.label.setText("连接FTP服务器失败，继续运行?")
         pass
 
+# 清理所有非空文件夹和文件
+def clean_dir_of_all(path):
+    list = os.listdir(path)
+    if len(list) != 0:
+        for i in range(0, len(list)):
+            path_to_clean = os.path.join(path, list[i])
+            if '工程测井助手' in list[i]: # 不删除主exe
+                pass
+            else:
+                if '.' not in list[i]:
+                    shutil.rmtree(path_to_clean)  # 清理文件夹，可非空
+                else:
+                    os.remove(path_to_clean)  # 清理文件
+    else:
+        pass
+
+def show_r():
+    animation = QPropertyAnimation(app)
+    animation.setTargetObject(main)
+    animation.setPropertyName(b"pos")
+    randon_num1 = random.randint(0, 2000)
+    randon_num2 = random.randint(0, 2000)
+    animation.setStartValue(QPoint(randon_num1, randon_num2))
+    animation.setEndValue(QPoint(500, 200))
+    animation.setDuration(4000)
+    animation.setEasingCurve(QEasingCurve.OutBounce)
+    animation.start()
+
+if __name__ == "__main__":
+
+    # 运行主程序
+    app = QApplication(sys.argv)
+    QApplication.setStyle(QStyleFactory.create("Fusion"))
+    Chain = Chain_Pane()
+    # main.show()
+    Chain.show()
+    main = Main_window()
+    Chain.label.setText("未检查更新。直接启动?")
+    show_r() # Main_window进场动画
     sys.exit(app.exec_())

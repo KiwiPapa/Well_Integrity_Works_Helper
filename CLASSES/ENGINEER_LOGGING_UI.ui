@@ -163,7 +163,7 @@
          <x>230</x>
          <y>40</y>
          <width>161</width>
-         <height>206</height>
+         <height>211</height>
         </rect>
        </property>
        <layout class="QGridLayout" name="gridLayout_5">
@@ -337,7 +337,7 @@
          <x>10</x>
          <y>40</y>
          <width>211</width>
-         <height>206</height>
+         <height>211</height>
         </rect>
        </property>
        <layout class="QGridLayout" name="gridLayout_6">
@@ -516,10 +516,10 @@
       <widget class="QPushButton" name="pushButton_53">
        <property name="geometry">
         <rect>
-         <x>560</x>
-         <y>180</y>
-         <width>171</width>
-         <height>61</height>
+         <x>580</x>
+         <y>200</y>
+         <width>131</width>
+         <height>31</height>
         </rect>
        </property>
        <property name="autoFillBackground">
@@ -529,15 +529,16 @@
         <string notr="true">font: 10pt &quot;黑体&quot;;</string>
        </property>
        <property name="text">
-        <string>                    →
-放置成果表后可自动填写
-                    →</string>
+        <string>自动读取顶底深&gt;&gt;&gt;</string>
        </property>
        <property name="autoDefault">
         <bool>false</bool>
        </property>
-       <property name="flat">
+       <property name="default">
         <bool>true</bool>
+       </property>
+       <property name="flat">
+        <bool>false</bool>
        </property>
       </widget>
       <widget class="QWidget" name="layoutWidget">
@@ -546,7 +547,7 @@
          <x>400</x>
          <y>40</y>
          <width>161</width>
-         <height>206</height>
+         <height>211</height>
         </rect>
        </property>
        <layout class="QGridLayout" name="gridLayout_9">
@@ -859,7 +860,7 @@
          <x>10</x>
          <y>40</y>
          <width>171</width>
-         <height>221</height>
+         <height>211</height>
         </rect>
        </property>
        <property name="styleSheet">
@@ -1108,7 +1109,7 @@
          <x>10</x>
          <y>40</y>
          <width>351</width>
-         <height>201</height>
+         <height>218</height>
         </rect>
        </property>
        <layout class="QGridLayout" name="gridLayout">
@@ -1657,7 +1658,7 @@
          <x>10</x>
          <y>40</y>
          <width>171</width>
-         <height>131</height>
+         <height>141</height>
         </rect>
        </property>
        <property name="styleSheet">
@@ -1928,7 +1929,7 @@
         <x>20</x>
         <y>16</y>
         <width>1111</width>
-        <height>27</height>
+        <height>34</height>
        </rect>
       </property>
       <property name="styleSheet">
@@ -1952,6 +1953,9 @@
            <property name="text">
             <string>加载资料登记表(docx格式)</string>
            </property>
+           <property name="default">
+            <bool>true</bool>
+           </property>
           </widget>
          </item>
          <item>
@@ -1961,6 +1965,9 @@
            </property>
            <property name="text">
             <string>生成LEAD井信息(txt格式)</string>
+           </property>
+           <property name="default">
+            <bool>true</bool>
            </property>
           </widget>
          </item>
@@ -2258,7 +2265,7 @@ color: rgb(0, 0, 255)</string>
          <x>40</x>
          <y>510</y>
          <width>1061</width>
-         <height>27</height>
+         <height>29</height>
         </rect>
        </property>
        <property name="styleSheet">
@@ -2911,8 +2918,8 @@ color: rgb(0, 0, 255)</string>
         <rect>
          <x>40</x>
          <y>50</y>
-         <width>158</width>
-         <height>25</height>
+         <width>166</width>
+         <height>32</height>
         </rect>
        </property>
        <layout class="QGridLayout" name="gridLayout_37">
@@ -3127,6 +3134,9 @@ color: rgb(0, 0, 255)</string>
            <property name="text">
             <string>普通模板</string>
            </property>
+           <property name="checked">
+            <bool>true</bool>
+           </property>
           </widget>
          </item>
          <item row="1" column="0">
@@ -3192,6 +3202,9 @@ color: rgb(0, 0, 255)</string>
            <property name="text">
             <string>裸眼伽马</string>
            </property>
+           <property name="checked">
+            <bool>true</bool>
+           </property>
           </widget>
          </item>
          <item row="1" column="0">
@@ -3203,6 +3216,22 @@ color: rgb(0, 0, 255)</string>
          </item>
         </layout>
        </widget>
+      </widget>
+      <widget class="QPushButton" name="pushButton_67">
+       <property name="geometry">
+        <rect>
+         <x>200</x>
+         <y>100</y>
+         <width>91</width>
+         <height>23</height>
+        </rect>
+       </property>
+       <property name="text">
+        <string>成果表规范化</string>
+       </property>
+       <property name="default">
+        <bool>true</bool>
+       </property>
       </widget>
      </widget>
     </widget>
@@ -3374,8 +3403,8 @@ color: rgb(0, 0, 255)</string>
         <rect>
          <x>390</x>
          <y>40</y>
-         <width>158</width>
-         <height>54</height>
+         <width>166</width>
+         <height>66</height>
         </rect>
        </property>
        <layout class="QGridLayout" name="gridLayout_22">
@@ -3517,46 +3546,6 @@ color: rgb(0, 0, 255)</string>
         </item>
        </layout>
       </widget>
-      <widget class="QWidget" name="layoutWidget_18">
-       <property name="geometry">
-        <rect>
-         <x>310</x>
-         <y>90</y>
-         <width>221</width>
-         <height>22</height>
-        </rect>
-       </property>
-       <layout class="QGridLayout" name="gridLayout_45">
-        <item row="0" column="2">
-         <widget class="QLineEdit" name="lineEdit_80">
-          <property name="styleSheet">
-           <string notr="true">font: 10pt &quot;黑体&quot;;</string>
-          </property>
-         </widget>
-        </item>
-        <item row="0" column="1">
-         <widget class="QLineEdit" name="lineEdit_81">
-          <property name="styleSheet">
-           <string notr="true">font: 10pt &quot;黑体&quot;;</string>
-          </property>
-         </widget>
-        </item>
-        <item row="0" column="3">
-         <widget class="QLineEdit" name="lineEdit_82">
-          <property name="styleSheet">
-           <string notr="true">font: 10pt &quot;黑体&quot;;</string>
-          </property>
-         </widget>
-        </item>
-        <item row="0" column="0">
-         <widget class="QLineEdit" name="lineEdit_83">
-          <property name="styleSheet">
-           <string notr="true">font: 10pt &quot;黑体&quot;;</string>
-          </property>
-         </widget>
-        </item>
-       </layout>
-      </widget>
       <widget class="QLabel" name="label_137">
        <property name="geometry">
         <rect>
@@ -3574,80 +3563,6 @@ color: rgb(0, 0, 255)</string>
        </property>
        <property name="textFormat">
         <enum>Qt::PlainText</enum>
-       </property>
-      </widget>
-      <widget class="QWidget" name="layoutWidget_15">
-       <property name="geometry">
-        <rect>
-         <x>310</x>
-         <y>70</y>
-         <width>231</width>
-         <height>16</height>
-        </rect>
-       </property>
-       <layout class="QGridLayout" name="gridLayout_43">
-        <item row="0" column="0">
-         <widget class="QLabel" name="label_26">
-          <property name="styleSheet">
-           <string notr="true">font: 10pt &quot;黑体&quot;;</string>
-          </property>
-          <property name="text">
-           <string>优(%)</string>
-          </property>
-         </widget>
-        </item>
-        <item row="0" column="1">
-         <widget class="QLabel" name="label_138">
-          <property name="styleSheet">
-           <string notr="true">font: 10pt &quot;黑体&quot;;</string>
-          </property>
-          <property name="text">
-           <string>中(%)</string>
-          </property>
-         </widget>
-        </item>
-        <item row="0" column="2">
-         <widget class="QLabel" name="label_139">
-          <property name="styleSheet">
-           <string notr="true">font: 10pt &quot;黑体&quot;;</string>
-          </property>
-          <property name="text">
-           <string>差(%)</string>
-          </property>
-         </widget>
-        </item>
-        <item row="0" column="3">
-         <widget class="QLabel" name="label_140">
-          <property name="styleSheet">
-           <string notr="true">font: 10pt &quot;黑体&quot;;</string>
-          </property>
-          <property name="text">
-           <string>不确定(%)</string>
-          </property>
-         </widget>
-        </item>
-       </layout>
-      </widget>
-      <widget class="QPushButton" name="pushButton_61">
-       <property name="geometry">
-        <rect>
-         <x>194</x>
-         <y>72</y>
-         <width>81</width>
-         <height>41</height>
-        </rect>
-       </property>
-       <property name="styleSheet">
-        <string notr="true">font: 10pt &quot;黑体&quot;;</string>
-       </property>
-       <property name="text">
-        <string>查询</string>
-       </property>
-       <property name="autoDefault">
-        <bool>false</bool>
-       </property>
-       <property name="default">
-        <bool>true</bool>
        </property>
       </widget>
       <widget class="QWidget" name="layoutWidget_17">
@@ -3693,6 +3608,129 @@ color: rgb(0, 0, 255)</string>
            <string notr="true">font: 10pt &quot;黑体&quot;;</string>
           </property>
          </widget>
+        </item>
+       </layout>
+      </widget>
+      <widget class="QWidget" name="layoutWidget">
+       <property name="geometry">
+        <rect>
+         <x>480</x>
+         <y>60</y>
+         <width>81</width>
+         <height>54</height>
+        </rect>
+       </property>
+       <layout class="QGridLayout" name="gridLayout_17">
+        <item row="1" column="1">
+         <widget class="QPushButton" name="pushButton_61">
+          <property name="styleSheet">
+           <string notr="true">font: 10pt &quot;黑体&quot;;</string>
+          </property>
+          <property name="text">
+           <string>查询</string>
+          </property>
+          <property name="autoDefault">
+           <bool>false</bool>
+          </property>
+          <property name="default">
+           <bool>true</bool>
+          </property>
+         </widget>
+        </item>
+        <item row="0" column="1">
+         <widget class="QPushButton" name="pushButton_66">
+          <property name="text">
+           <string>规范化</string>
+          </property>
+         </widget>
+        </item>
+       </layout>
+      </widget>
+      <widget class="QWidget" name="">
+       <property name="geometry">
+        <rect>
+         <x>180</x>
+         <y>70</y>
+         <width>241</width>
+         <height>45</height>
+        </rect>
+       </property>
+       <layout class="QGridLayout" name="gridLayout_50">
+        <item row="0" column="0">
+         <layout class="QGridLayout" name="gridLayout_43">
+          <item row="0" column="0">
+           <widget class="QLabel" name="label_26">
+            <property name="styleSheet">
+             <string notr="true">font: 10pt &quot;黑体&quot;;</string>
+            </property>
+            <property name="text">
+             <string>优(%)</string>
+            </property>
+           </widget>
+          </item>
+          <item row="0" column="1">
+           <widget class="QLabel" name="label_138">
+            <property name="styleSheet">
+             <string notr="true">font: 10pt &quot;黑体&quot;;</string>
+            </property>
+            <property name="text">
+             <string>中(%)</string>
+            </property>
+           </widget>
+          </item>
+          <item row="0" column="2">
+           <widget class="QLabel" name="label_139">
+            <property name="styleSheet">
+             <string notr="true">font: 10pt &quot;黑体&quot;;</string>
+            </property>
+            <property name="text">
+             <string>差(%)</string>
+            </property>
+           </widget>
+          </item>
+          <item row="0" column="3">
+           <widget class="QLabel" name="label_140">
+            <property name="styleSheet">
+             <string notr="true">font: 10pt &quot;黑体&quot;;</string>
+            </property>
+            <property name="text">
+             <string>不确定(%)</string>
+            </property>
+           </widget>
+          </item>
+         </layout>
+        </item>
+        <item row="1" column="0">
+         <layout class="QGridLayout" name="gridLayout_45">
+          <item row="0" column="2">
+           <widget class="QLineEdit" name="lineEdit_80">
+            <property name="styleSheet">
+             <string notr="true">font: 10pt &quot;黑体&quot;;</string>
+            </property>
+           </widget>
+          </item>
+          <item row="0" column="1">
+           <widget class="QLineEdit" name="lineEdit_81">
+            <property name="styleSheet">
+             <string notr="true">font: 10pt &quot;黑体&quot;;</string>
+            </property>
+           </widget>
+          </item>
+          <item row="0" column="3">
+           <widget class="QLineEdit" name="lineEdit_82">
+            <property name="styleSheet">
+             <string notr="true">font: 10pt &quot;黑体&quot;;</string>
+            </property>
+           </widget>
+          </item>
+          <item row="0" column="0">
+           <widget class="QLineEdit" name="lineEdit_83">
+            <property name="styleSheet">
+             <string notr="true">font: 10pt &quot;黑体&quot;;</string>
+            </property>
+           </widget>
+          </item>
+         </layout>
         </item>
        </layout>
       </widget>
@@ -3766,8 +3804,8 @@ color: rgb(0, 0, 255)</string>
         <rect>
          <x>20</x>
          <y>70</y>
-         <width>239</width>
-         <height>25</height>
+         <width>240</width>
+         <height>32</height>
         </rect>
        </property>
        <layout class="QGridLayout" name="gridLayout_2">
@@ -3927,42 +3965,10 @@ color: rgb(0, 0, 255)</string>
       <widget class="QWidget" name="layoutWidget">
        <property name="geometry">
         <rect>
-         <x>31</x>
+         <x>10</x>
          <y>80</y>
-         <width>521</width>
-         <height>25</height>
-        </rect>
-       </property>
-       <layout class="QGridLayout" name="gridLayout_17">
-        <item row="0" column="0">
-         <widget class="QPushButton" name="pushButton_15">
-          <property name="text">
-           <string>选取目录</string>
-          </property>
-         </widget>
-        </item>
-        <item row="0" column="1">
-         <widget class="QPushButton" name="pushButton_16">
-          <property name="text">
-           <string>格式转换</string>
-          </property>
-          <property name="default">
-           <bool>true</bool>
-          </property>
-         </widget>
-        </item>
-        <item row="0" column="2">
-         <widget class="QLineEdit" name="lineEdit_41"/>
-        </item>
-       </layout>
-      </widget>
-      <widget class="QWidget" name="layoutWidget">
-       <property name="geometry">
-        <rect>
-         <x>31</x>
-         <y>118</y>
-         <width>521</width>
-         <height>54</height>
+         <width>561</width>
+         <height>91</height>
         </rect>
        </property>
        <layout class="QGridLayout" name="gridLayout_32">
@@ -4108,8 +4114,8 @@ color: rgb(0, 0, 255)</string>
       <widget class="QLabel" name="label_115">
        <property name="geometry">
         <rect>
-         <x>260</x>
-         <y>130</y>
+         <x>250</x>
+         <y>140</y>
          <width>241</width>
          <height>20</height>
         </rect>
@@ -4124,7 +4130,7 @@ color: rgb(0, 0, 255)</string>
          <x>10</x>
          <y>60</y>
          <width>481</width>
-         <height>25</height>
+         <height>33</height>
         </rect>
        </property>
        <layout class="QGridLayout" name="gridLayout_25">
@@ -4172,7 +4178,7 @@ color: rgb(0, 0, 255)</string>
          <x>330</x>
          <y>100</y>
          <width>158</width>
-         <height>25</height>
+         <height>32</height>
         </rect>
        </property>
        <layout class="QGridLayout" name="gridLayout_27">
@@ -4236,7 +4242,7 @@ color: rgb(0, 0, 255)</string>
          <x>30</x>
          <y>80</y>
          <width>531</width>
-         <height>25</height>
+         <height>33</height>
         </rect>
        </property>
        <layout class="QGridLayout" name="gridLayout_28">
@@ -4303,7 +4309,7 @@ color: rgb(0, 0, 255)</string>
          <x>10</x>
          <y>70</y>
          <width>471</width>
-         <height>25</height>
+         <height>33</height>
         </rect>
        </property>
        <layout class="QGridLayout" name="gridLayout_30">
@@ -4434,7 +4440,7 @@ color: rgb(0, 0, 255)</string>
          <x>20</x>
          <y>90</y>
          <width>541</width>
-         <height>61</height>
+         <height>78</height>
         </rect>
        </property>
        <layout class="QGridLayout" name="gridLayout_35">
@@ -4474,7 +4480,7 @@ color: rgb(0, 0, 255)</string>
          <x>20</x>
          <y>50</y>
          <width>151</width>
-         <height>22</height>
+         <height>23</height>
         </rect>
        </property>
        <layout class="QGridLayout" name="gridLayout_36">
@@ -4750,7 +4756,7 @@ color: rgb(0, 0, 255)</string>
         <x>70</x>
         <y>540</y>
         <width>421</width>
-        <height>22</height>
+        <height>23</height>
        </rect>
       </property>
       <layout class="QGridLayout" name="gridLayout_40">
@@ -4922,8 +4928,8 @@ color: rgb(0, 0, 255)</string>
        <rect>
         <x>220</x>
         <y>30</y>
-        <width>241</width>
-        <height>29</height>
+        <width>250</width>
+        <height>32</height>
        </rect>
       </property>
       <layout class="QHBoxLayout" name="horizontalLayout_8">
@@ -5055,8 +5061,8 @@ color: rgb(0, 0, 255)</string>
          <rect>
           <x>200</x>
           <y>40</y>
-          <width>320</width>
-          <height>29</height>
+          <width>334</width>
+          <height>32</height>
          </rect>
         </property>
         <layout class="QHBoxLayout" name="horizontalLayout_2">
@@ -5152,8 +5158,8 @@ color: rgb(0, 0, 255)</string>
          <rect>
           <x>200</x>
           <y>40</y>
-          <width>320</width>
-          <height>29</height>
+          <width>334</width>
+          <height>32</height>
          </rect>
         </property>
         <layout class="QHBoxLayout" name="horizontalLayout_3">
@@ -5249,8 +5255,8 @@ color: rgb(0, 0, 255)</string>
          <rect>
           <x>200</x>
           <y>40</y>
-          <width>320</width>
-          <height>29</height>
+          <width>334</width>
+          <height>32</height>
          </rect>
         </property>
         <layout class="QHBoxLayout" name="horizontalLayout_4">
